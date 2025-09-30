@@ -27,24 +27,26 @@ load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection with fallback
 try:
-    mongo_url = os.environ['MONGO_URL']
-    client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
-    db = client[os.environ['DB_NAME']]
-    # Test connection
-    import asyncio
-    async def test_connection():
-        try:
-            await client.admin.command('ismaster')
-            return True
-        except:
-            return False
-except:
+    mongo_url = os.environ.get('MONGO_URL')
+    if mongo_url:
+        print(f"[DEBUG] Attempting MongoDB connection to: {mongo_url[:30]}...")
+        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=10000)
+        db = client[os.environ.get('DB_NAME', 'jharkhand_tourism')]
+        print("[INFO] MongoDB client initialized successfully")
+    else:
+        raise Exception("MONGO_URL not found in environment variables")
+except Exception as e:
     client = None
     db = None
-    print("Warning: MongoDB connection failed, using mock data")
+    print(f"Warning: MongoDB connection failed: {str(e)}, using mock data")
 
 # Create the main app without a prefix
 app = FastAPI(title="Jharkhand Tourism Platform")
+
+# Add root endpoint for health checks
+@app.get("/")
+async def health_check():
+    return {"message": "Jharkhand Tourism Platform API is running", "status": "healthy"}
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
