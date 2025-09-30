@@ -502,14 +502,17 @@ async def emergency_sos(request: EmergencySOSRequest):
 # Include the router in the main app
 app.include_router(api_router)
 
+# Get CORS origins from environment variable
+cors_origins = os.environ.get('CORS_ORIGINS', "*")
+if cors_origins == "*":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = cors_origins.split(",")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001"
-    ],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -523,4 +526,5 @@ logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
